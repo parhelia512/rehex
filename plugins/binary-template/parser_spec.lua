@@ -1939,4 +1939,43 @@ describe("parser", function()
 		
 		assert.are.same(expect, got)
 	end)
+	
+	it("parses variable definitions with attributes", function()
+		local got
+		local expect
+		
+		got = parser.parse_text("int var_a < param_b>;")
+		expect = {
+			{ "UNKNOWN FILE", 1, "variable", "int", "var_a", nil, nil,
+				-- attributes
+				{
+					{ "UNKNOWN FILE", 1, "param_b", nil },
+				} },
+		}
+		
+		assert.are.same(expect, got)
+		
+		got = parser.parse_text("int var_a <param_c=1 >;")
+		expect = {
+			{ "UNKNOWN FILE", 1, "variable", "int", "var_a", nil, nil,
+				-- attributes
+				{
+					{ "UNKNOWN FILE", 1, "param_c", { "UNKNOWN FILE", 1, "num", 1 } }
+				} },
+		}
+		
+		assert.are.same(expect, got)
+		
+		got = parser.parse_text("struct foo bar(1, 2, 3)[100]<align = 90, hello = \"world\">;")
+		expect = {
+			{ "UNKNOWN FILE", 1, "variable", "struct foo", "bar", { { "UNKNOWN FILE", 1, "num", 1 }, { "UNKNOWN FILE", 1, "num", 2 }, { "UNKNOWN FILE", 1, "num", 3 } }, { "UNKNOWN FILE", 1, "num", 100 },
+				-- attributes
+				{
+					{ "UNKNOWN FILE", 1, "align", { "UNKNOWN FILE", 1, "num", 90 } },
+					{ "UNKNOWN FILE", 1, "hello", { "UNKNOWN FILE", 1, "str", "world" } },
+				} },
+		}
+		
+		assert.are.same(expect, got)
+	end);
 end);

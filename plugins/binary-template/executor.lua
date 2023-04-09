@@ -1466,7 +1466,7 @@ expand_value = function(context, type_info, struct_arg_values, array_element_idx
 	end
 end
 
-local function _decl_variable(context, statement, var_type, var_name, struct_arg_values, array_size, initial_value, is_local)
+local function _decl_variable(context, statement, var_type, var_name, struct_arg_values, array_size, attributes, initial_value, is_local)
 	local filename = statement[1]
 	local line_num = statement[2]
 	
@@ -1640,6 +1640,7 @@ _eval_variable = function(context, statement)
 	local var_name = statement[5]
 	local struct_args = statement[6]
 	local array_size = statement[7]
+	local attributes = statement[8]
 	
 	local struct_arg_values = nil
 	if struct_args ~= nil
@@ -1652,7 +1653,26 @@ _eval_variable = function(context, statement)
 		end
 	end
 	
-	_decl_variable(context, statement, var_type, var_name, struct_arg_values, array_size, nil, false)
+	local attributes_evaluated = nil
+	if attributes ~= nil
+	then
+		attributes_evaluated = {}
+		
+		for i = 1, #attributes
+		do
+			local attr_name = attributes[i][3]
+			local attr_value = attributes[i][4]
+			
+			if attr_value ~= nil
+			then
+				attr_value = { _eval_statement(context, attr_value) }
+			end
+			
+			attributes_evaluated[i] = { attr_name, attr_value }
+		end
+	end
+	
+	_decl_variable(context, statement, var_type, var_name, struct_arg_values, array_size, attributes_evaluated, nil, false)
 end
 
 _eval_local_variable = function(context, statement)
@@ -1676,7 +1696,7 @@ _eval_local_variable = function(context, statement)
 	local was_declaring_local_var = context.declaring_local_var
 	context.declaring_local_var = true
 	
-	_decl_variable(context, statement, var_type, var_name, struct_arg_values, array_size, initial_value, true)
+	_decl_variable(context, statement, var_type, var_name, struct_arg_values, array_size, nil, initial_value, true)
 	
 	context.declaring_local_var = was_declaring_local_var
 end
@@ -1990,7 +2010,7 @@ _eval_struct_defn = function(context, statement)
 		local var_args   = var_decl[2]
 		local array_size = var_decl[3]
 		
-		_decl_variable(context, statement, type_info, var_name, var_args, array_size, nil, false)
+		_decl_variable(context, statement, type_info, var_name, var_args, array_size, nil, nil, false)
 	end
 end
 
@@ -2105,7 +2125,7 @@ _eval_enum = function(context, statement)
 		local var_name   = var_decl[1]
 		local array_size = var_decl[3]
 		
-		_decl_variable(context, statement, type_info, var_name, nil, array_size, nil, false)
+		_decl_variable(context, statement, type_info, var_name, nil, array_size, nil, nil, false)
 	end
 end
 
